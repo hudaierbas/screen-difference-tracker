@@ -3,6 +3,7 @@ import cv2
 import pyautogui
 import time
 import smtplib, ssl
+import numpy as np
 
 #cofig
 root_dir= r"C:\Users\herbas\Desktop\hudai\python\screen_tracking_v2"
@@ -50,6 +51,31 @@ try:
 
         if score < 1:
             send_email()
+
+        #display difference
+        thresh = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = contours[0] if len(contours) == 2 else contours[1]
+
+        mask = np.zeros(imageB.shape, dtype='uint8')
+        filled_after = imageA.copy()
+
+        for c in contours:
+            area = cv2.contourArea(c)
+            if area > 40:
+                x,y,w,h = cv2.boundingRect(c)
+                cv2.rectangle(imageA, (x, y), (x + w, y + h), (36,255,12), 2)
+                cv2.rectangle(imageB, (x, y), (x + w, y + h), (36,255,12), 2)
+                cv2.drawContours(mask, [c], 0, (0,255,0), -1)
+                cv2.drawContours(filled_after, [c], 0, (0,255,0), -1)
+
+        cv2.imshow('before', imageA)
+        cv2.imshow('after', imageB)
+        cv2.imshow('diff',diff)
+        cv2.imshow('mask',mask)
+        cv2.imshow('filled after',filled_after)
+
+
 
         cv2.imwrite(root_dir+"\p_img_a.png", imageB)
         time.sleep(5)
